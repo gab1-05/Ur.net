@@ -11,6 +11,10 @@ export default function Settings() {
   const { data: sysInfo } = useGetSystemInfo({ query: { queryKey: getGetSystemInfoQueryKey() } });
   const { data: caps } = useGetSystemCapabilities({ query: { queryKey: getGetSystemCapabilitiesQueryKey() } });
   const { data: health } = useHealthCheck({ query: { queryKey: getHealthCheckQueryKey() } });
+
+  const commands = caps && typeof caps === "object" && "commands" in caps && caps.commands && typeof caps.commands === "object"
+    ? Object.entries(caps.commands as Record<string, unknown>)
+    : [];
   
   const { theme, setTheme } = useTheme();
 
@@ -121,7 +125,7 @@ export default function Settings() {
               <CardContent className="p-0">
                 <Table>
                   <TableBody>
-                    {caps && Object.entries(caps.commands).map(([cmd, available]) => (
+                    {commands.map(([cmd, available]) => (
                       <TableRow key={cmd}>
                         <TableCell className="font-medium uppercase text-xs tracking-wider">{cmd}</TableCell>
                         <TableCell className="text-right">

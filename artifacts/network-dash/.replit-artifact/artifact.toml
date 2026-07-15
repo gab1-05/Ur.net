@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Network Diagnostics Dashboard"
+title = "Urnet"
 version = "1.0.0"
 id = "artifacts/network-dash"
 router = "path"

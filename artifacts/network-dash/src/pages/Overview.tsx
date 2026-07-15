@@ -15,16 +15,29 @@ export default function Overview() {
   const { data: overview, isLoading: overviewLoading } = useGetDiagnosticOverview({ query: { queryKey: getGetDiagnosticOverviewQueryKey() } });
   const { data: alerts, isLoading: alertsLoading } = useGetAlerts({ query: { queryKey: getGetAlertsQueryKey() } });
 
+  const alertsList = Array.isArray(alerts) ? alerts : [];
+  const latencyTrend = Array.isArray(overview?.latencyTrend) ? overview.latencyTrend : [];
+  const packetLossTrend = Array.isArray(overview?.packetLossTrend) ? overview.packetLossTrend : [];
+  const recentRuns = Array.isArray(overview?.recentRuns) ? overview.recentRuns : [];
+
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard Overview</h1>
+        <div className="flex flex-col gap-2 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <p className="text-sm font-medium text-primary">Operations snapshot</p>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard Overview</h1>
+            </div>
+            <div className="rounded-full border border-border/70 bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground">
+              Updated live
+            </div>
+          </div>
         </div>
 
         {/* Alerts Strip */}
         <div className="space-y-2">
-          {alertsLoading ? null : alerts?.map(alert => (
+          {alertsLoading ? null : alertsList.map((alert) => (
             <AlertBanner
               key={alert.id}
               id={alert.id}
@@ -38,7 +51,7 @@ export default function Overview() {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {overviewLoading ? (
             <>
               <SkeletonCard />
@@ -77,8 +90,8 @@ export default function Overview() {
         </div>
 
         {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <Card className="border-border/70 shadow-sm">
             <CardHeader>
               <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Latency Trend</CardTitle>
             </CardHeader>
@@ -86,9 +99,9 @@ export default function Overview() {
               <div className="h-[250px] w-full">
                 {overviewLoading ? (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm border border-dashed rounded-md">Loading chart...</div>
-                ) : overview?.latencyTrend && overview.latencyTrend.length > 0 ? (
+                ) : latencyTrend.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={overview.latencyTrend}>
+                    <LineChart data={latencyTrend}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.5} />
                       <XAxis 
                         dataKey="timestamp" 
@@ -120,7 +133,7 @@ export default function Overview() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-border/70 shadow-sm">
             <CardHeader>
               <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Packet Loss Trend</CardTitle>
             </CardHeader>
@@ -128,9 +141,9 @@ export default function Overview() {
               <div className="h-[250px] w-full">
                 {overviewLoading ? (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm border border-dashed rounded-md">Loading chart...</div>
-                ) : overview?.packetLossTrend && overview.packetLossTrend.length > 0 ? (
+                ) : packetLossTrend.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={overview.packetLossTrend}>
+                    <LineChart data={packetLossTrend}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.5} />
                       <XAxis 
                         dataKey="timestamp" 
@@ -169,7 +182,7 @@ export default function Overview() {
           {overviewLoading ? (
             <SkeletonTable rows={5} columns={5} />
           ) : (
-            <div className="border border-border rounded-md bg-card overflow-hidden">
+            <div className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm">
               <Table>
                 <TableHeader className="bg-muted/50">
                   <TableRow>
@@ -181,7 +194,7 @@ export default function Overview() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {overview?.recentRuns?.map((run) => (
+                  {recentRuns.map((run) => (
                     <TableRow key={run.id} className="font-mono text-sm">
                       <TableCell className="text-muted-foreground">
                         {new Date(run.startedAt).toLocaleTimeString()}
@@ -203,7 +216,7 @@ export default function Overview() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {(!overview?.recentRuns || overview.recentRuns.length === 0) && (
+                  {recentRuns.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                         No recent runs

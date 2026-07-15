@@ -11,6 +11,8 @@ export default function Interfaces() {
     query: { queryKey: getGetInterfacesQueryKey() }
   });
 
+  const interfaceList = Array.isArray(interfaces) ? interfaces : [];
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -30,7 +32,7 @@ export default function Interfaces() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {interfaces?.map((iface) => (
+            {interfaceList.map((iface) => (
               <Card key={iface.name} className="overflow-hidden">
                 <CardHeader className="bg-muted/30 border-b border-border pb-4 flex flex-row items-start justify-between space-y-0">
                   <div className="space-y-1">
@@ -74,7 +76,7 @@ export default function Interfaces() {
                 </CardContent>
               </Card>
             ))}
-            {(!interfaces || interfaces.length === 0) && (
+            {interfaceList.length === 0 && (
               <div className="col-span-full py-12 text-center text-muted-foreground bg-card border border-dashed rounded-md">
                 No interfaces found.
               </div>

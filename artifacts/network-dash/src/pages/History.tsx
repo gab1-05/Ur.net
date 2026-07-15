@@ -26,6 +26,7 @@ export default function History() {
     query: { queryKey: getGetDiagnosticHistoryQueryKey(queryParams) }
   });
 
+  const historyRuns = Array.isArray(history?.runs) ? history.runs : [];
   const rerun = useRerunDiagnostic();
 
   const handleRerun = async (id: number) => {
@@ -99,7 +100,7 @@ export default function History() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {history?.runs?.map((run) => (
+                {historyRuns.map((run) => (
                   <TableRow key={run.id} className="font-mono text-sm">
                     <TableCell className="text-muted-foreground">
                       {new Date(run.startedAt).toLocaleString()}
@@ -129,7 +130,7 @@ export default function History() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {(!history?.runs || history.runs.length === 0) && (
+                {historyRuns.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
                       No history found for the given filters.

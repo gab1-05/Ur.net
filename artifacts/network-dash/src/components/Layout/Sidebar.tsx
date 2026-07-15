@@ -17,11 +17,14 @@ const navItems = [
 
 function Logo() {
   return (
-    <div className="flex items-center gap-2 px-4 h-12 border-b border-border shrink-0">
-      <div className="flex items-center justify-center w-7 h-7 rounded-md bg-primary/15">
-        <Wifi className="w-4 h-4 text-primary" />
+    <div className="flex items-center gap-2.5 px-4 h-14 border-b border-border/70 shrink-0 bg-sidebar/80 backdrop-blur-sm">
+      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/15 ring-1 ring-primary/20 shadow-sm">
+        <Wifi className="w-4.5 h-4.5 text-primary" />
       </div>
-      <span className="font-bold text-sm tracking-tight text-foreground">Ur<span className="text-primary">.net</span></span>
+      <div className="flex flex-col leading-none">
+        <span className="font-semibold text-sm tracking-tight text-foreground">Ur<span className="text-primary">.net</span></span>
+        <span className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground/80">Control Center</span>
+      </div>
     </div>
   );
 }
@@ -31,21 +34,21 @@ export function Sidebar() {
   const [open, setOpen] = useState(false);
 
   const NavContent = () => (
-    <nav className="flex flex-col gap-0.5 px-2 py-3">
+    <nav className="flex flex-col gap-1 px-2 py-3">
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
         return (
           <Link key={item.href} href={item.href}>
             <span
-              className={`flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded cursor-pointer transition-colors ${
+              className={`group flex items-center gap-2.5 px-2.5 py-2 text-sm font-medium rounded-lg cursor-pointer transition-all ${
                 isActive
-                  ? "bg-primary/10 text-primary"
+                  ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/10"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
               onClick={() => setOpen(false)}
             >
-              <Icon className="h-3.5 w-3.5 shrink-0" />
+              <Icon className={`h-4 w-4 shrink-0 transition-colors ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"}`} />
               {item.label}
             </span>
           </Link>
@@ -56,13 +59,16 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="hidden md:flex flex-col w-44 border-r border-border bg-sidebar shrink-0">
+      <aside className="hidden md:flex flex-col w-56 border-r border-border/70 bg-sidebar/95 shrink-0">
         <Logo />
         <div className="flex-1 overflow-y-auto">
           <NavContent />
         </div>
-        <div className="px-3 py-2 border-t border-border">
-          <p className="text-[10px] text-muted-foreground/50 font-mono">v1.0.0</p>
+        <div className="px-3 py-3 border-t border-border/70">
+          <div className="rounded-lg border border-border/70 bg-background/50 px-3 py-2">
+            <p className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground/70">Status</p>
+            <p className="mt-1 text-sm font-medium text-foreground">Live monitoring</p>
+          </div>
         </div>
       </aside>
 
