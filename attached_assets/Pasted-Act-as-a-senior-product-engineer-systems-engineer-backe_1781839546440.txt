@@ -1,0 +1,601 @@
+Act as a senior product engineer, systems engineer, backend engineer, frontend engineer, desktop app engineer, and UI/UX designer. Build a complete production-grade application called “Network Diagnostics Dashboard”.
+
+The app must be fully functional, not a mockup, not a scaffold, and not a fake dashboard. It must look like a real human-designed product used by developers, sysadmins, IT support teams, and network engineers. Avoid generic AI-generated layouts and fake SaaS styling.
+
+==================================================
+CHOSEN STACK — USE THIS EXACTLY
+==================================================
+
+Use this exact stack unless there is a hard technical blocker:
+
+- Frontend: React + TypeScript + Vite
+- Styling: Tailwind CSS with a custom design system
+- Backend API: FastAPI
+- Command execution + parsing: Python subprocess + parser modules
+- Local persistence: SQLite
+- Desktop packaging: Tauri
+- Charts: Recharts
+- Tables: TanStack Table
+- Forms + validation: React Hook Form + Zod
+- State/data fetching: React Query
+- Routing: React Router
+- Icons: Lucide
+- Testing: pytest + Vitest + Playwright
+
+Why this stack:
+- Tauri uses the system WebView instead of bundling Chromium, which generally makes it lighter than Electron for a utility-style desktop app.
+- FastAPI fits a typed API backend and is commonly run with ASGI servers such as Uvicorn.
+- Python subprocess is appropriate for controlled system command execution and output parsing.
+
+==================================================
+APP MODES
+==================================================
+
+The application must run in all of these modes:
+
+1. Local browser mode
+- Frontend running locally
+- Backend API running locally
+- Full diagnostics functionality available where OS permissions allow
+
+2. Online hosted mode
+- Frontend deployable separately
+- Backend deployable to a server
+- CORS-safe architecture
+- Clear handling of commands that are unavailable in hosted environments
+
+3. Desktop mode
+- Packaged installable application using Tauri
+- Managed local FastAPI backend process
+- Startup health check
+- Graceful shutdown
+- Clear error handling if backend fails to start
+
+4. Demo/fallback mode
+- If system-level diagnostics cannot run, the app must switch to clearly labeled demo mode
+- Demo mode must not pretend to be live data
+- Demo mode must use structured seeded sample results
+
+==================================================
+PRODUCT GOAL
+==================================================
+
+Build a serious network diagnostics dashboard with command-line integration, historical results, exportable data, strong UI/UX, real backend behavior, and clean desktop packaging.
+
+This is not a landing page.
+This is not a generic admin template.
+This is not a static design exercise.
+This is a working product.
+
+==================================================
+DESIGN DIRECTION
+==================================================
+
+The app must feel precise, technical, restrained, and operational.
+
+Design principles:
+- Swiss-influenced control panel aesthetic
+- Original, human-designed interface
+- Dense but readable layout
+- Left-aligned content by default
+- Neutral surfaces
+- One restrained teal primary accent
+- Semantic success, warning, and error colors
+- Light mode and dark mode
+- Sticky top bar
+- Sidebar navigation
+- Single primary scroll region in dashboard views
+- Tabular numerals for metrics
+- Subtle shadows
+- Alpha-blended borders
+- Original inline SVG logo
+- Clean typography
+- No decorative clutter
+
+Absolutely avoid:
+- Purple or blue SaaS gradients
+- Neon glows
+- Glowing blobs
+- Centered-everything layouts
+- Marketing-style hero sections
+- Fake KPI cards
+- Generic 3-column feature rows
+- Random glassmorphism
+- Placeholder charts
+- Decorative shapes added just to fill space
+- Nonfunctional controls
+
+==================================================
+CORE FEATURES
+==================================================
+
+Build these modules fully:
+
+1. Overview Dashboard
+- KPI cards for latency, packet loss, jitter, DNS resolution time, hop count, interface state, uptime
+- Historical trend charts
+- Recent diagnostic run table
+- Device/network health summary
+- Alert strip for failures and degraded states
+
+2. Diagnostics Toolkit
+- Ping
+- Traceroute / tracert
+- DNS lookup
+- Port check
+- Gateway reachability
+- Interface scan
+- Hostname resolution
+- Public IP / local IP / subnet info
+- ARP / route inspection where supported
+- Bulk diagnostics for multiple targets
+- Speed test via optional adapter boundary
+- WHOIS via optional adapter boundary
+
+3. Interfaces View
+- Network interface list
+- Interface state
+- IP assignment
+- MAC address if available
+- Gateway info if available
+- Status summary cards
+- Refresh controls
+- OS-specific handling
+
+4. History View
+- Historical runs
+- Filter by target, type, result, date
+- Search capability
+- Saved result details
+- Export result as CSV and JSON
+- Re-run previous diagnostic
+
+5. Profiles / Presets
+- Save target profiles
+- Save diagnostic presets
+- Quick-run templates such as:
+  - Gaming latency check
+  - DNS issue check
+  - Office network quick test
+  - Router reachability
+  - Unreachable host investigation
+
+6. Settings / Environment
+- Theme toggle
+- Runtime mode indicator
+- OS capability detection
+- Command support matrix
+- Demo mode status
+- Export settings
+- App information
+- Version/build info
+
+==================================================
+CLI INTEGRATION RULES
+==================================================
+
+All command execution must be real and safe.
+
+Use Python subprocess for controlled execution of supported commands such as:
+- ping
+- tracert / traceroute
+- nslookup or dig
+- ipconfig / ifconfig / ip
+- arp
+- route or equivalent
+- netstat if useful for diagnostics
+
+Non-negotiable command execution rules:
+- Never execute arbitrary raw shell input
+- Never pass unsanitized strings into shell execution
+- Use a strict allowlist-based command registry
+- Validate all target input
+- Sanitize all parameters
+- Add timeouts
+- Add cancellation support where practical
+- Capture stdout, stderr, and exit codes
+- Parse outputs into structured JSON
+- Separate command adapter logic from parser logic
+- Detect Windows vs Linux vs macOS and choose the correct adapter automatically
+- If a command is unsupported on a platform, show a proper unsupported state
+
+==================================================
+BACKEND REQUIREMENTS
+==================================================
+
+Use FastAPI with a layered architecture.
+
+Required backend structure:
+- API layer
+- Schema/model layer
+- Service layer
+- Command adapter layer
+- Parser layer
+- Repository layer
+
+Required endpoints or equivalent:
+- GET /health
+- GET /system/info
+- GET /system/capabilities
+- POST /diagnostics/ping
+- POST /diagnostics/traceroute
+- POST /diagnostics/dns
+- POST /diagnostics/port-check
+- POST /diagnostics/gateway
+- GET /diagnostics/interfaces
+- GET /diagnostics/history
+- GET /diagnostics/run/{id}
+- POST /profiles
+- GET /profiles
+- DELETE /profiles/{id}
+- GET /export/run/{id}.csv
+- GET /export/run/{id}.json
+
+Backend implementation requirements:
+- Pydantic request/response models
+- SQLite database
+- Seed/demo data
+- Optional in-memory mode for tests
+- Structured logging
+- Background task support for longer operations
+- Health checks
+- OS capability detection
+- Real parser implementations for key commands
+
+==================================================
+DATA MODELS
+==================================================
+
+Create typed models/entities for at least:
+- DiagnosticRun
+- Target
+- CommandRequest
+- CommandResult
+- ParsedMetric
+- RouteHop
+- DnsRecord
+- InterfaceStatus
+- Alert
+- SavedProfile
+- Preset
+- AppSetting
+- ExportJob
+- EnvironmentStatus
+
+==================================================
+PARSER REQUIREMENTS
+==================================================
+
+Implement actual parsers for:
+- Ping output
+- Traceroute output
+- DNS lookup output
+- Interface inspection output
+
+Parser behavior:
+- Return structured normalized JSON
+- Preserve raw output for inspection/debugging
+- Provide partial parsing where full parsing fails
+- Distinguish command failure vs parser failure
+- Record parse warnings when output is irregular
+
+==================================================
+FRONTEND REQUIREMENTS
+==================================================
+
+Build a real application frontend, not static mock screens.
+
+Required pages:
+- Overview
+- Diagnostics
+- History
+- Interfaces
+- Profiles
+- Settings
+- About / Environment
+
+Required frontend architecture:
+- Typed API client
+- Route-based page structure
+- Reusable component system
+- Real backend integration
+- URL-based filter state where appropriate
+- Error boundaries
+- Accessible menus and dialogs
+- Keyboard navigation
+- Responsive data views
+- Mobile-safe interaction patterns
+
+Required components:
+- Sidebar
+- Topbar
+- Command palette
+- KPI card set
+- Trend charts
+- Diagnostics form panel
+- Results viewer
+- Hop-by-hop traceroute panel
+- Alert banner
+- Interface status cards or grid
+- Data table
+- Export menu
+- Empty state
+- Skeleton loaders
+- Confirm dialog
+- Minor non-blocking toasts only
+
+Dashboard hierarchy must be:
+- Top: KPI cards
+- Middle: trend charts and summaries
+- Bottom: details, logs, tables, raw output panels
+
+Keep visible KPI count to about 5–7 at once.
+
+==================================================
+UX REQUIREMENTS
+==================================================
+
+The application must have polished UX.
+
+Required behaviors:
+- One clear primary action per view
+- Sticky filters above long tables/charts
+- Loading skeletons
+- Empty states
+- Error states
+- Partial-data states
+- Offline or unavailable states
+- Unsupported-command states
+- No-permission states
+- Responsive tables or card fallbacks on small screens
+- Proper keyboard focus states
+- 44x44 minimum touch targets where applicable
+- Reduced motion support
+
+Keyboard shortcuts:
+- / or Ctrl/Cmd+K => command palette
+- R => rerun selected diagnostic
+- E => export selected result
+- ? => open shortcuts help
+
+==================================================
+DESKTOP PACKAGING REQUIREMENTS
+==================================================
+
+Use Tauri for desktop packaging.
+
+Desktop requirements:
+- Package the frontend as a desktop app shell
+- Launch and manage the FastAPI backend as a local process
+- Perform startup health checks
+- Retry or show error state if backend startup fails
+- Shut down backend cleanly when app exits
+- Support Windows and Linux packaging
+- Separate development mode and packaged mode behavior clearly
+- Include Tauri configuration
+- Include desktop process orchestration code
+- Include packaging scripts
+
+==================================================
+ONLINE DEPLOYMENT REQUIREMENTS
+==================================================
+
+The project must also support online deployment.
+
+Include:
+- Dockerfile
+- docker-compose.yml
+- Production-ready environment variable strategy
+- Backend startup command
+- Frontend build command
+- Reverse-proxy-ready assumptions
+- CORS configuration
+- Clear explanation of what diagnostics features work online vs only locally
+
+==================================================
+PROJECT STRUCTURE
+==================================================
+
+Generate a clean monorepo with this structure:
+
+- apps/web
+- apps/api
+- apps/desktop
+- packages/ui
+- packages/types
+- packages/config
+- docs
+- tests
+
+Also include:
+- package manager workspace config
+- root scripts
+- app-level scripts
+- shared config where useful
+- .env.example
+
+==================================================
+DOCUMENTATION REQUIREMENTS
+==================================================
+
+Documentation is mandatory. Do not leave placeholders.
+
+Generate these files fully:
+- README.md
+- apps/web/README.md
+- apps/api/README.md
+- apps/desktop/README.md
+- docs/ARCHITECTURE.md
+- docs/SETUP.md
+- docs/DEVELOPMENT.md
+- docs/DEPLOYMENT.md
+- docs/TESTING.md
+- docs/COMMANDS_AND_PARSERS.md
+- .env.example
+
+README.md must include:
+- What the app does
+- Main features
+- Chosen stack
+- Why the stack was chosen
+- Supported platforms
+- Quick start steps
+- Development commands
+- Build commands
+- Test commands
+- Desktop packaging commands
+- Deployment summary
+- Folder structure
+- Architecture summary
+- Security notes
+- Known limitations
+- Extension points
+
+apps/web/README.md must include:
+- Frontend architecture
+- Route map
+- Component organization
+- Theme/design system notes
+- Chart integration notes
+- Run/build commands
+
+apps/api/README.md must include:
+- API architecture
+- Command execution model
+- Parser strategy
+- Endpoint list
+- Data models
+- Run/test instructions
+- OS compatibility notes
+
+apps/desktop/README.md must include:
+- Tauri packaging model
+- Backend sidecar/process management
+- Desktop development workflow
+- Packaging workflow
+- Platform-specific notes
+
+docs/SETUP.md must include:
+- Prerequisites
+- Windows setup
+- Linux setup
+- Node setup
+- Python setup
+- Rust setup for Tauri
+- Environment variable setup
+- First run steps
+- Common startup troubleshooting
+
+docs/DEPLOYMENT.md must include:
+- Local deployment
+- Online deployment
+- Desktop packaging
+- Docker usage
+- Environment separation
+- Health checks
+- Logging notes
+- Limitations of hosted diagnostics
+
+docs/COMMANDS_AND_PARSERS.md must include:
+- Supported commands by OS
+- Adapter mapping
+- Sample raw outputs
+- Parsing strategy
+- Failure handling
+- Unsupported cases
+
+Mandatory documentation rules:
+- Every documented command must match actual scripts
+- Every referenced file path must exist
+- Every environment variable in code must exist in .env.example
+- Every feature listed in README must exist in code
+- Include troubleshooting for Windows and Linux startup failures
+
+==================================================
+TESTING REQUIREMENTS
+==================================================
+
+Add real tests.
+
+Backend:
+- pytest tests for parsers
+- pytest tests for API endpoints
+- tests for service-layer validation
+
+Frontend:
+- Vitest component/unit tests
+- Playwright tests for critical flows
+
+Critical flows to test:
+- Run ping diagnostic
+- View parsed results
+- Export result
+- Save profile
+- Navigate across pages
+- Backend unavailable state
+- Demo mode behavior
+
+==================================================
+SECURITY REQUIREMENTS
+==================================================
+
+Security is non-negotiable.
+
+Must include:
+- Allowlist-only command execution
+- Input validation
+- Escaped output rendering
+- No arbitrary shell execution
+- No plaintext secrets in code
+- Environment-based configuration
+- Clear trust boundaries between frontend, backend, and desktop shell
+- Honest handling of unsupported features
+
+==================================================
+HARD CONSTRAINTS
+==================================================
+
+Do not:
+- Build a landing page first
+- Stop at scaffold level
+- Leave dead buttons
+- Create fake charts
+- Add fake controls
+- Use purple/blue gradient SaaS styling
+- Put everything in one file
+- Use arbitrary shell execution
+- Depend on localStorage/sessionStorage as critical infrastructure
+- Skip mobile behavior
+- Skip dark mode
+- Skip loading/empty/error states
+- Skip export flows
+- Use lorem ipsum
+- Pretend unimplemented features work
+
+If something cannot be fully implemented:
+- Mark it honestly
+- Build a real adapter boundary or stub
+- Explain the limitation clearly
+- Do not fake completion
+
+==================================================
+OUTPUT FORMAT
+==================================================
+
+Output in this exact order:
+
+1. Chosen stack and brief justification
+2. Tradeoffs versus Electron and Django-based alternatives
+3. Full monorepo folder tree
+4. All source files in full
+5. All README files in full
+6. All docs files in full
+7. Setup instructions
+8. Development commands
+9. Test commands
+10. Desktop packaging commands
+11. Online deployment commands
+12. Final implementation checklist with each feature marked honestly as complete, partial, or not implemented
+
+Final quality rule:
+Do not optimize for speed of response. Optimize for correctness, wiring completeness, UI quality, documentation accuracy, and real operability.

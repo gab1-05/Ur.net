@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Network Diagnostics Dashboard"
+version = "1.0.0"
+id = "artifacts/network-dash"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22361
+
+[services.development]
+run = "pnpm --filter @workspace/network-dash run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/network-dash", "run", "build" ]
+publicDir = "artifacts/network-dash/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22361"
+BASE_PATH = "/"

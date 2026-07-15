@@ -1,0 +1,907 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 1.0.0
+  description: Network Diagnostics Dashboard API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: system
+    description: System information and capabilities
+  - name: diagnostics
+    description: Diagnostic command execution
+  - name: history
+    description: Historical diagnostic runs
+  - name: profiles
+    description: Saved diagnostic profiles and presets
+  - name: export
+    description: Export diagnostic results
+  - name: alerts
+    description: System alerts
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /system/info:
+    get:
+      operationId: getSystemInfo
+      tags: [system]
+      summary: Get system information
+      description: Returns OS, hostname, uptime, IP addresses, and environment info
+      responses:
+        "200":
+          description: System information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemInfo"
+
+  /system/capabilities:
+    get:
+      operationId: getSystemCapabilities
+      tags: [system]
+      summary: Get supported diagnostic commands
+      description: Returns which diagnostic commands are available on this OS
+      responses:
+        "200":
+          description: Capability matrix
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemCapabilities"
+
+  /diagnostics/ping:
+    post:
+      operationId: runPing
+      tags: [diagnostics]
+      summary: Run ping diagnostic
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PingInput"
+      responses:
+        "200":
+          description: Ping results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosticRun"
+
+  /diagnostics/traceroute:
+    post:
+      operationId: runTraceroute
+      tags: [diagnostics]
+      summary: Run traceroute diagnostic
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TracerouteInput"
+      responses:
+        "200":
+          description: Traceroute results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosticRun"
+
+  /diagnostics/dns:
+    post:
+      operationId: runDns
+      tags: [diagnostics]
+      summary: Run DNS lookup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DnsInput"
+      responses:
+        "200":
+          description: DNS lookup results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosticRun"
+
+  /diagnostics/port-check:
+    post:
+      operationId: runPortCheck
+      tags: [diagnostics]
+      summary: Check TCP port reachability
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PortCheckInput"
+      responses:
+        "200":
+          description: Port check results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosticRun"
+
+  /diagnostics/gateway:
+    get:
+      operationId: checkGateway
+      tags: [diagnostics]
+      summary: Check default gateway reachability
+      responses:
+        "200":
+          description: Gateway check results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosticRun"
+
+  /diagnostics/interfaces:
+    get:
+      operationId: getInterfaces
+      tags: [diagnostics]
+      summary: Get network interfaces
+      description: Returns list of network interfaces with state, IP, MAC
+      responses:
+        "200":
+          description: Interface list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InterfaceStatus"
+
+  /diagnostics/history:
+    get:
+      operationId: getDiagnosticHistory
+      tags: [history]
+      summary: Get diagnostic run history
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+          description: Filter by diagnostic type (ping, traceroute, dns, port-check, gateway)
+        - name: target
+          in: query
+          schema:
+            type: string
+          description: Filter by target host
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Filter by status (success, failure, partial)
+        - name: from
+          in: query
+          schema:
+            type: string
+          description: ISO date string lower bound
+        - name: to
+          in: query
+          schema:
+            type: string
+          description: ISO date string upper bound
+        - name: limit
+          in: query
+          schema:
+            type: integer
+          description: Max results to return (default 50)
+        - name: offset
+          in: query
+          schema:
+            type: integer
+          description: Pagination offset
+      responses:
+        "200":
+          description: History list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryResponse"
+
+  /diagnostics/run/{id}:
+    get:
+      operationId: getDiagnosticRun
+      tags: [history]
+      summary: Get a specific diagnostic run by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Diagnostic run details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosticRun"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /diagnostics/run/{id}/rerun:
+    post:
+      operationId: rerunDiagnostic
+      tags: [diagnostics]
+      summary: Re-run a previous diagnostic
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: New diagnostic run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosticRun"
+
+  /profiles:
+    get:
+      operationId: getProfiles
+      tags: [profiles]
+      summary: List saved profiles
+      responses:
+        "200":
+          description: Profile list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SavedProfile"
+    post:
+      operationId: createProfile
+      tags: [profiles]
+      summary: Create a saved profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileInput"
+      responses:
+        "201":
+          description: Created profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedProfile"
+
+  /profiles/{id}:
+    get:
+      operationId: getProfile
+      tags: [profiles]
+      summary: Get a profile by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedProfile"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateProfile
+      tags: [profiles]
+      summary: Update a profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileInput"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedProfile"
+    delete:
+      operationId: deleteProfile
+      tags: [profiles]
+      summary: Delete a profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /profiles/{id}/run:
+    post:
+      operationId: runProfile
+      tags: [profiles]
+      summary: Execute all diagnostics in a profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Diagnostic runs from this profile
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DiagnosticRun"
+
+  /export/run/{id}/json:
+    get:
+      operationId: exportRunJson
+      tags: [export]
+      summary: Export a diagnostic run as JSON
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: JSON export
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosticRun"
+
+  /export/run/{id}/csv:
+    get:
+      operationId: exportRunCsv
+      tags: [export]
+      summary: Export a diagnostic run as CSV
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  /alerts:
+    get:
+      operationId: getAlerts
+      tags: [alerts]
+      summary: Get active system alerts
+      responses:
+        "200":
+          description: Active alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alert"
+
+  /diagnostics/overview:
+    get:
+      operationId: getDiagnosticOverview
+      tags: [diagnostics]
+      summary: Get dashboard overview metrics
+      description: Returns aggregated KPIs and trend data for the overview dashboard
+      responses:
+        "200":
+          description: Overview metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OverviewMetrics"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+        version:
+          type: string
+        uptime:
+          type: number
+        demoMode:
+          type: boolean
+      required:
+        - status
+
+    SystemInfo:
+      type: object
+      properties:
+        hostname:
+          type: string
+        platform:
+          type: string
+        os:
+          type: string
+        arch:
+          type: string
+        uptime:
+          type: number
+        nodeVersion:
+          type: string
+        publicIp:
+          type: ["string", "null"]
+        localIps:
+          type: array
+          items:
+            type: string
+        demoMode:
+          type: boolean
+        environment:
+          type: string
+      required:
+        - hostname
+        - platform
+        - os
+        - arch
+        - uptime
+        - localIps
+        - demoMode
+        - environment
+
+    SystemCapabilities:
+      type: object
+      properties:
+        platform:
+          type: string
+        commands:
+          type: object
+          properties:
+            ping:
+              type: boolean
+            traceroute:
+              type: boolean
+            dns:
+              type: boolean
+            portCheck:
+              type: boolean
+            interfaces:
+              type: boolean
+            arp:
+              type: boolean
+          required: [ping, traceroute, dns, portCheck, interfaces, arp]
+        demoMode:
+          type: boolean
+      required:
+        - platform
+        - commands
+        - demoMode
+
+    PingInput:
+      type: object
+      properties:
+        target:
+          type: string
+          minLength: 1
+        count:
+          type: integer
+          minimum: 1
+          maximum: 20
+        timeout:
+          type: integer
+          minimum: 1
+          maximum: 30
+      required:
+        - target
+
+    TracerouteInput:
+      type: object
+      properties:
+        target:
+          type: string
+          minLength: 1
+        maxHops:
+          type: integer
+          minimum: 1
+          maximum: 30
+        timeout:
+          type: integer
+          minimum: 1
+          maximum: 60
+      required:
+        - target
+
+    DnsInput:
+      type: object
+      properties:
+        target:
+          type: string
+          minLength: 1
+        recordType:
+          type: string
+          enum: [A, AAAA, MX, NS, TXT, CNAME, PTR, SOA]
+        server:
+          type: ["string", "null"]
+      required:
+        - target
+
+    PortCheckInput:
+      type: object
+      properties:
+        target:
+          type: string
+          minLength: 1
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        timeout:
+          type: integer
+          minimum: 1
+          maximum: 30
+      required:
+        - target
+        - port
+
+    DiagnosticRun:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        target:
+          type: string
+        status:
+          type: string
+          enum: [success, failure, partial, running]
+        startedAt:
+          type: string
+        completedAt:
+          type: ["string", "null"]
+        durationMs:
+          type: ["integer", "null"]
+        demoMode:
+          type: boolean
+        rawOutput:
+          type: ["string", "null"]
+        parsedResult:
+          $ref: "#/components/schemas/ParsedResult"
+        metrics:
+          $ref: "#/components/schemas/RunMetrics"
+        hops:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/RouteHop"
+        dnsRecords:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/DnsRecord"
+        error:
+          type: ["string", "null"]
+        parseWarnings:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - type
+        - target
+        - status
+        - startedAt
+        - demoMode
+        - parseWarnings
+
+    ParsedResult:
+      type: object
+      properties:
+        summary:
+          type: string
+        success:
+          type: boolean
+        details:
+          type: object
+      required:
+        - summary
+        - success
+
+    RunMetrics:
+      type: object
+      properties:
+        latencyMin:
+          type: ["number", "null"]
+        latencyMax:
+          type: ["number", "null"]
+        latencyAvg:
+          type: ["number", "null"]
+        packetLoss:
+          type: ["number", "null"]
+        jitter:
+          type: ["number", "null"]
+        hopCount:
+          type: ["integer", "null"]
+        packetsTransmitted:
+          type: ["integer", "null"]
+        packetsReceived:
+          type: ["integer", "null"]
+
+    RouteHop:
+      type: object
+      properties:
+        hop:
+          type: integer
+        host:
+          type: ["string", "null"]
+        ip:
+          type: ["string", "null"]
+        rtt1:
+          type: ["number", "null"]
+        rtt2:
+          type: ["number", "null"]
+        rtt3:
+          type: ["number", "null"]
+        timeout:
+          type: boolean
+      required:
+        - hop
+        - timeout
+
+    DnsRecord:
+      type: object
+      properties:
+        type:
+          type: string
+        name:
+          type: string
+        value:
+          type: string
+        ttl:
+          type: ["integer", "null"]
+      required:
+        - type
+        - name
+        - value
+
+    InterfaceStatus:
+      type: object
+      properties:
+        name:
+          type: string
+        displayName:
+          type: ["string", "null"]
+        state:
+          type: string
+          enum: [up, down, unknown]
+        ipv4:
+          type: ["string", "null"]
+        ipv6:
+          type: ["string", "null"]
+        mac:
+          type: ["string", "null"]
+        gateway:
+          type: ["string", "null"]
+        netmask:
+          type: ["string", "null"]
+        type:
+          type: ["string", "null"]
+        mtu:
+          type: ["integer", "null"]
+        rx:
+          type: ["integer", "null"]
+        tx:
+          type: ["integer", "null"]
+      required:
+        - name
+        - state
+
+    HistoryResponse:
+      type: object
+      properties:
+        runs:
+          type: array
+          items:
+            $ref: "#/components/schemas/DiagnosticRun"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required:
+        - runs
+        - total
+        - limit
+        - offset
+
+    SavedProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        category:
+          type: string
+        targets:
+          type: array
+          items:
+            type: string
+        diagnostics:
+          type: array
+          items:
+            type: string
+        config:
+          type: object
+        lastRunAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        isPreset:
+          type: boolean
+      required:
+        - id
+        - name
+        - category
+        - targets
+        - diagnostics
+        - createdAt
+        - isPreset
+
+    ProfileInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        category:
+          type: string
+        targets:
+          type: array
+          items:
+            type: string
+        diagnostics:
+          type: array
+          items:
+            type: string
+        config:
+          type: object
+      required:
+        - name
+        - targets
+        - diagnostics
+
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+        severity:
+          type: string
+          enum: [info, warning, error, critical]
+        message:
+          type: string
+        detail:
+          type: ["string", "null"]
+        target:
+          type: ["string", "null"]
+        triggeredAt:
+          type: string
+        resolved:
+          type: boolean
+      required:
+        - id
+        - severity
+        - message
+        - triggeredAt
+        - resolved
+
+    OverviewMetrics:
+      type: object
+      properties:
+        avgLatency:
+          type: ["number", "null"]
+        packetLoss:
+          type: ["number", "null"]
+        avgJitter:
+          type: ["number", "null"]
+        dnsResolutionTime:
+          type: ["number", "null"]
+        totalRuns:
+          type: integer
+        successRate:
+          type: ["number", "null"]
+        activeAlerts:
+          type: integer
+        uptimePercent:
+          type: ["number", "null"]
+        latencyTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrendPoint"
+        packetLossTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrendPoint"
+        recentRuns:
+          type: array
+          items:
+            $ref: "#/components/schemas/DiagnosticRun"
+      required:
+        - totalRuns
+        - activeAlerts
+        - latencyTrend
+        - packetLossTrend
+        - recentRuns
+
+    TrendPoint:
+      type: object
+      properties:
+        timestamp:
+          type: string
+        value:
+          type: ["number", "null"]
+        label:
+          type: ["string", "null"]
+      required:
+        - timestamp
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: ["string", "null"]
+      required:
+        - error
