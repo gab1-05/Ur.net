@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { useHealthCheck, useGetSystemInfo } from "@workspace/api-client-react";
+import { useHealthCheck, getHealthCheckQueryKey, useGetSystemInfo } from "@workspace/api-client-react";
 import { Circle } from "lucide-react";
 
 export function StatusBar() {
-  const { data: health } = useHealthCheck({ query: { refetchInterval: 15000 } });
+  const { data: health } = useHealthCheck({ query: { queryKey: getHealthCheckQueryKey(), refetchInterval: 15000 } });
   const { data: sysInfo } = useGetSystemInfo();
   const [time, setTime] = useState(() => new Date());
 
