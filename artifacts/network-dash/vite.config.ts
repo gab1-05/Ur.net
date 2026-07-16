@@ -39,12 +39,7 @@ export default defineConfig({
     fs: {
       strict: true,
     },
-    proxy: {
-      "/api": {
-        target: process.env.VITE_API_SERVER_URL ?? `http://localhost:${Number(process.env.API_SERVER_PORT ?? 3000)}`,
-        changeOrigin: true,
-      },
-    },
+    proxy: {},
   },
   preview: {
     port,
