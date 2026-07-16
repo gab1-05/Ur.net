@@ -1,7 +1,7 @@
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Terminal, Wifi } from "lucide-react";
-import { useHealthCheck } from "@workspace/api-client-react";
+import { useHealthCheck, getHealthCheckQueryKey } from "@workspace/api-client-react";
 import { Sidebar } from "./Sidebar";
 import { Badge } from "@/components/ui/badge";
 import { CommandPalette } from "../CommandPalette";
@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 
 export function Topbar() {
   const { theme, setTheme } = useTheme();
-  const { data: health } = useHealthCheck();
+  const { data: health } = useHealthCheck({ query: { queryKey: getHealthCheckQueryKey() } });
   const [cmdOpen, setCmdOpen] = useState(false);
 
   useEffect(() => {

@@ -14,8 +14,9 @@ import {
   useRunDns,
   useRunPortCheck,
   useCheckGateway,
+  getCheckGatewayQueryKey,
 } from "@workspace/api-client-react";
-import { DiagnosticRun, DnsInputRecordType } from "@workspace/api-client-react/src/generated/api.schemas";
+import { DiagnosticRun, DnsInputRecordType } from "@/lib/api-schemas";
 import { useToast } from "@/hooks/use-toast";
 import {
   Activity, ArrowLeftRight, Globe, Plug, Network, Wifi, Shield,
@@ -61,7 +62,7 @@ export default function Diagnostics() {
   const traceroute = useRunTraceroute();
   const dns = useRunDns();
   const portCheck = useRunPortCheck();
-  const { refetch: runGateway, isFetching: gatewayPending } = useCheckGateway({ query: { enabled: false } });
+  const { refetch: runGateway, isFetching: gatewayPending } = useCheckGateway({ query: { queryKey: getCheckGatewayQueryKey(), enabled: false } });
 
   const isPending =
     ping.isPending || traceroute.isPending || dns.isPending ||
@@ -144,13 +145,16 @@ export default function Diagnostics() {
 
         {/* Tool content */}
         <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-          {/* Tool header */}
-          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border shrink-0 bg-background">
-            <tool.icon className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs font-semibold">{tool.label}</span>
-            <ChevronRight className="h-3 w-3 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">{tool.description}</span>
-          </div>
+         {/* Tool header */}
+         <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border shrink-0 bg-background">
+           {(() => {
+             const Icon = tool.icon;
+             return <Icon className="h-3.5 w-3.5 text-primary" />;
+           })()}
+           <span className="text-xs font-semibold">{tool.label}</span>
+           <ChevronRight className="h-3 w-3 text-muted-foreground" />
+           <span className="text-xs text-muted-foreground">{tool.description}</span>
+         </div>
 
           <div className="flex-1 p-4 flex flex-col gap-4">
             {/* Core network tools */}

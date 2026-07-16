@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronRight, Play } from "lucide-react";
 import { useGetSystemCapabilities } from "@workspace/api-client-react";
-import { DnsInputRecordType } from "@workspace/api-client-react/src/generated/api.schemas";
+import { DnsInputRecordType } from "@/lib/api-schemas";
 
 const baseSchema = z.object({
   target: z.string().min(1, "Target is required"),
@@ -30,12 +30,13 @@ const formSchema = baseSchema.and(
 export type DiagnosticsFormData = z.infer<typeof formSchema>;
 
 interface DiagnosticsFormProps {
+  defaultType?: "ping" | "traceroute" | "dns" | "port-check" | "gateway";
   defaultValues?: Partial<DiagnosticsFormData>;
   onSubmit: (data: DiagnosticsFormData) => void;
   isPending: boolean;
 }
 
-export function DiagnosticsForm({ defaultValues, onSubmit, isPending }: DiagnosticsFormProps) {
+export function DiagnosticsForm({ defaultType, defaultValues, onSubmit, isPending }: DiagnosticsFormProps) {
   const { data: caps } = useGetSystemCapabilities();
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
@@ -43,7 +44,7 @@ export function DiagnosticsForm({ defaultValues, onSubmit, isPending }: Diagnost
     resolver: zodResolver(formSchema),
     defaultValues: {
       target: "",
-      type: "ping",
+      type: defaultType ?? "ping",
       count: 4,
       timeout: 5,
       maxHops: 30,

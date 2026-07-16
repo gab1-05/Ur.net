@@ -121,7 +121,10 @@ export default function Overview() {
                       <Tooltip 
                         contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)', fontSize: '12px' }}
                         labelFormatter={(val) => new Date(val).toLocaleString()}
-                        formatter={(val: number) => [`${val}ms`, 'Latency']}
+                        formatter={(val: unknown) => {
+  const num = typeof val === "number" ? val : null;
+  return num != null ? [`${num}ms`, "Latency"] : ["—", "Value"];
+}}
                       />
                       <Line type="monotone" dataKey="value" stroke="hsl(var(--chart-1))" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
                     </LineChart>
@@ -163,7 +166,10 @@ export default function Overview() {
                       <Tooltip 
                         contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)', fontSize: '12px' }}
                         labelFormatter={(val) => new Date(val).toLocaleString()}
-                        formatter={(val: number) => [`${val}%`, 'Packet Loss']}
+                        formatter={(val: unknown) => {
+  const num = typeof val === "number" ? val : null;
+  return num != null ? [`${num}%`, "Packet Loss"] : ["—", "Value"];
+}}
                       />
                       <Line type="monotone" dataKey="value" stroke="hsl(var(--chart-3))" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
                     </LineChart>

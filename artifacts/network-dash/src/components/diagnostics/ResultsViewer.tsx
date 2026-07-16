@@ -1,4 +1,4 @@
-import { DiagnosticRun } from "@workspace/api-client-react/src/generated/api.schemas";
+import { DiagnosticRun } from "@/lib/api-schemas";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "../ui/StatusBadge";
 import { TracerouteHops } from "./TracerouteHops";

@@ -146,7 +146,10 @@ export function ContinuousPing() {
                 <YAxis tick={{ fontSize: 9 }} tickLine={false} axisLine={false} unit="ms" width={36} />
                 <Tooltip
                   contentStyle={{ fontSize: 11, background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 6 }}
-                  formatter={(v: number | null) => v != null ? [`${v.toFixed(1)}ms`, "Latency"] : ["Timeout", "Status"]}
+                  formatter={(v: unknown) => {
+  const num = typeof v === "number" ? v : null;
+  return num != null ? [`${num.toFixed(1)}ms`, "Latency"] : ["Timeout", "Status"];
+}}
                 />
                 <Line
                   type="monotone"
