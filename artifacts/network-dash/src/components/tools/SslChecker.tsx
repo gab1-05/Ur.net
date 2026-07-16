@@ -23,8 +23,6 @@ interface SslResult {
   error: string | null;
 }
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-
 function DaysIndicator({ days }: { days: number }) {
   const color = days < 0 ? "text-red-500" : days < 14 ? "text-yellow-500" : "text-emerald-500";
   const label = days < 0 ? "EXPIRED" : `${days}d remaining`;
@@ -53,7 +51,7 @@ export function SslChecker() {
     setError(null);
     setResult(null);
     try {
-      const resp = await fetch(`${BASE}/api/diagnostics/ssl`, {
+      const resp = await fetch("/api/diagnostics/ssl", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ host, port: parseInt(port) || 443 }),

@@ -26,7 +26,7 @@ export function ArpTable() {
     setLoading(true);
     setError(null);
     try {
-      const resp = await fetch(`${BASE}/api/diagnostics/arp`);
+      const resp = await fetch("/api/diagnostics/arp");
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error ?? "Request failed");
       setResult(data);

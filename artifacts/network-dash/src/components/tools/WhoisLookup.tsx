@@ -42,7 +42,7 @@ export function WhoisLookup() {
     setError(null);
     setResult(null);
     try {
-      const resp = await fetch(`${BASE}/api/diagnostics/whois`, {
+      const resp = await fetch("/api/diagnostics/whois", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ domain }),

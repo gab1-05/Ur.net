@@ -29,7 +29,7 @@ export function ContinuousPing() {
   const doPing = useCallback(async (seqNum: number) => {
     const time = new Date().toLocaleTimeString("en-US", { hour12: false });
     try {
-      const resp = await fetch(`${BASE}/api/diagnostics/ping`, {
+      const resp = await fetch("/api/diagnostics/ping", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target, count: 1, timeout: 3 }),

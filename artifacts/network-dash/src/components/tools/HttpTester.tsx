@@ -44,7 +44,9 @@ export function HttpTester() {
     setError(null);
     setResult(null);
     try {
-      const resp = await fetch(`${BASE}/api/diagnostics/http`, {
+      const url_fetch = "/api/diagnostics/http";
+      console.log("[HttpTester] fetch:", url_fetch, "origin:", location.origin, "base:", import.meta.env.BASE_URL);
+      const resp = await fetch(url_fetch, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url, method }),
