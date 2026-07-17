@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
 import { diagnosticRunsTable } from "@workspace/db";
 import { desc } from "drizzle-orm";
 import {
@@ -10,8 +9,13 @@ import {
   PingInputSchema, TracerouteInputSchema, DnsInputSchema, PortCheckInputSchema,
 } from "../lib/commands/allowlist.js";
 import { z } from "zod";
+import { getDb } from "@workspace/db";
 
 const router = Router();
+
+async function getDB() {
+  return getDb();
+}
 
 async function saveRun(data: {
   type: string;
@@ -30,6 +34,7 @@ async function saveRun(data: {
   parseWarnings?: string[];
   config?: Record<string, unknown> | null;
 }) {
+  const db = await getDB();
   const [run] = await db
     .insert(diagnosticRunsTable)
     .values(data as typeof diagnosticRunsTable.$inferInsert)
@@ -249,8 +254,9 @@ router.get("/diagnostics/interfaces", (_req, res): void => {
 });
 
 // ─── OVERVIEW ─────────────────────────────────────────────────────────────────
-router.get("/diagnostics/overview", async (_req, res): Promise<void> => {
+router.get("/diagnostics/overview", async (req, res): Promise<void> => {
   try {
+    const db = await getDB();
     const allRuns = await db.select().from(diagnosticRunsTable).orderBy(diagnosticRunsTable.startedAt);
     const recent = [...allRuns].slice(-5).reverse();
 
@@ -314,7 +320,7 @@ function buildTrend(runs: RunRow[], getValue: (r: RunRow) => number | null) {
   });
 }
 
-export function formatRun(run: RunRow) {
+function formatRun(run: RunRow) {
   return {
     id: run.id,
     type: run.type,

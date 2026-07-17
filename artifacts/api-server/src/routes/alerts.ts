@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
-import { diagnosticRunsTable } from "@workspace/db";
+import { getDb, diagnosticRunsTable } from "@workspace/db";
 import { eq, desc, gte } from "drizzle-orm";
 
 const router = Router();
 
 // GET /api/alerts — derive alerts from recent failed runs
 router.get("/alerts", async (req, res) => {
+  const db = getDb();
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
   const recentFailures = await db
     .select()
