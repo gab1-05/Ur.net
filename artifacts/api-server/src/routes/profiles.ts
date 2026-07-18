@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getDb, profilesTable, diagnosticRunsTable } from "@workspace/db";
+import { getDb, isDatabaseAvailable, profilesTable, diagnosticRunsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import {
@@ -32,16 +32,26 @@ function formatProfile(p: typeof profilesTable.$inferSelect) {
   };
 }
 
+async function requireDb(req: any, res: any): Promise<ReturnType<typeof getDb> | null> {
+  if (!isDatabaseAvailable()) {
+    res.status(503).json({ error: "Database is not configured. Set DATABASE_URL to enable persistence." });
+    return null;
+  }
+  return getDb();
+}
+
 // GET /api/profiles
-router.get("/profiles", async (_req, res): Promise<void> => {
-  const db = getDb();
+router.get("/profiles", async (req, res): Promise<void> => {
+  const db = await requireDb(req, res);
+  if (!db) return;
   const profiles = await db.select().from(profilesTable).orderBy(profilesTable.isPreset, profilesTable.id);
   res.json(profiles.map(formatProfile));
 });
 
 // GET /api/profiles/:id
 router.get("/profiles/:id", async (req, res): Promise<void> => {
-  const db = getDb();
+  const db = await requireDb(req, res);
+  if (!db) return;
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid ID" });
@@ -57,7 +67,8 @@ router.get("/profiles/:id", async (req, res): Promise<void> => {
 
 // POST /api/profiles
 router.post("/profiles", async (req, res): Promise<void> => {
-  const db = getDb();
+  const db = await requireDb(req, res);
+  if (!db) return;
   const parsed = ProfileInputSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
@@ -77,7 +88,8 @@ router.post("/profiles", async (req, res): Promise<void> => {
 
 // PUT /api/profiles/:id
 router.put("/profiles/:id", async (req, res): Promise<void> => {
-  const db = getDb();
+  const db = await requireDb(req, res);
+  if (!db) return;
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid ID" });
@@ -108,7 +120,8 @@ router.put("/profiles/:id", async (req, res): Promise<void> => {
 
 // DELETE /api/profiles/:id
 router.delete("/profiles/:id", async (req, res): Promise<void> => {
-  const db = getDb();
+  const db = await requireDb(req, res);
+  if (!db) return;
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid ID" });
@@ -120,7 +133,8 @@ router.delete("/profiles/:id", async (req, res): Promise<void> => {
 
 // POST /api/profiles/:id/run
 router.post("/profiles/:id/run", async (req, res): Promise<void> => {
-  const db = getDb();
+  const db = await requireDb(req, res);
+  if (!db) return;
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid ID" });

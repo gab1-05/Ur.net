@@ -9,24 +9,37 @@ let db: ReturnType<typeof drizzle> | null = null;
 
 function ensureDatabase() {
   if (!process.env.DATABASE_URL) {
-    throw new Error(
-      "DATABASE_URL must be set. Did you forget to provision a database?",
-    );
+    return false;
   }
   if (!pool) {
     pool = new Pool({ connectionString: process.env.DATABASE_URL });
     db = drizzle(pool, { schema });
   }
+  return true;
 }
 
 export function getDb() {
-  ensureDatabase();
-  return db!;
+  const ok = ensureDatabase();
+  if (!ok || !db) {
+    throw new Error(
+      "Database is not configured. Set DATABASE_URL to enable persistence.",
+    );
+  }
+  return db;
 }
 
 export function getPool() {
-  ensureDatabase();
-  return pool!;
+  const ok = ensureDatabase();
+  if (!ok || !pool) {
+    throw new Error(
+      "Database is not configured. Set DATABASE_URL to enable persistence.",
+    );
+  }
+  return pool;
+}
+
+export function isDatabaseAvailable(): boolean {
+  return ensureDatabase() && !!db;
 }
 
 export * from "./schema";

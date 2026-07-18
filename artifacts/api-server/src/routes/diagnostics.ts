@@ -9,12 +9,38 @@ import {
   PingInputSchema, TracerouteInputSchema, DnsInputSchema, PortCheckInputSchema,
 } from "../lib/commands/allowlist.js";
 import { z } from "zod";
-import { getDb } from "@workspace/db";
+import { getDb, isDatabaseAvailable } from "@workspace/db";
 
 const router = Router();
 
 async function getDB() {
+  if (!isDatabaseAvailable()) {
+    throw new Error("Database is not configured. Set DATABASE_URL to enable persistence.");
+  }
   return getDb();
+}
+
+function buildDemoRun(data: {
+  type: string;
+  target: string;
+  status: string;
+  startedAt: Date;
+  completedAt?: Date;
+  durationMs?: number;
+  demoMode: boolean;
+  rawOutput?: string | null;
+  parsedResult?: Record<string, unknown> | null;
+  metrics?: Record<string, unknown> | null;
+  hops?: unknown[] | null;
+  dnsRecords?: unknown[] | null;
+  error?: string | null;
+  parseWarnings?: string[];
+  config?: Record<string, unknown> | null;
+}): Record<string, unknown> {
+  return {
+    id: Math.floor(Math.random() * 100000),
+    ...data,
+  };
 }
 
 async function saveRun(data: {
@@ -34,12 +60,16 @@ async function saveRun(data: {
   parseWarnings?: string[];
   config?: Record<string, unknown> | null;
 }) {
-  const db = await getDB();
-  const [run] = await db
-    .insert(diagnosticRunsTable)
-    .values(data as typeof diagnosticRunsTable.$inferInsert)
-    .returning();
-  return run;
+  try {
+    const db = await getDB();
+    const [run] = await db
+      .insert(diagnosticRunsTable)
+      .values(data as typeof diagnosticRunsTable.$inferInsert)
+      .returning();
+    return run;
+  } catch {
+    return buildDemoRun(data);
+  }
 }
 
 // ─── PING ─────────────────────────────────────────────────────────────────────
@@ -320,14 +350,15 @@ function buildTrend(runs: RunRow[], getValue: (r: RunRow) => number | null) {
   });
 }
 
-function formatRun(run: RunRow) {
+function formatRun(run: any): any {
+  if (!run) return run;
   return {
     id: run.id,
     type: run.type,
     target: run.target,
     status: run.status,
-    startedAt: run.startedAt?.toISOString(),
-    completedAt: run.completedAt?.toISOString() ?? null,
+    startedAt: run.startedAt instanceof Date ? run.startedAt.toISOString() : run.startedAt,
+    completedAt: run.completedAt instanceof Date ? run.completedAt.toISOString() : (run.completedAt ?? null),
     durationMs: run.durationMs,
     demoMode: run.demoMode,
     rawOutput: run.rawOutput,
