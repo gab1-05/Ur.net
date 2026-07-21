@@ -1,11 +1,15 @@
 import { Router } from "express";
-import { getDb, diagnosticRunsTable } from "@workspace/db";
+import { getDb, isDatabaseAvailable, diagnosticRunsTable } from "@workspace/db";
 import { eq, desc, gte, lte, and, sql } from "drizzle-orm";
 
 const router = Router();
 
 // GET /api/diagnostics/history
 router.get("/diagnostics/history", async (req, res): Promise<void> => {
+  if (!isDatabaseAvailable()) {
+    res.json({ runs: [] });
+    return;
+  }
   const db = getDb();
   const { type, target, status, from, to, limit = "50", offset = "0" } = req.query as Record<string, string>;
   const whereClauses: any[] = [];
@@ -41,6 +45,10 @@ router.get("/diagnostics/history", async (req, res): Promise<void> => {
 
 // GET /api/diagnostics/run/:id
 router.get("/diagnostics/run/:id", async (req, res): Promise<void> => {
+  if (!isDatabaseAvailable()) {
+    res.status(503).json({ error: "Database is not configured. Set DATABASE_URL to enable persistence." });
+    return;
+  }
   const db = getDb();
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
@@ -57,6 +65,10 @@ router.get("/diagnostics/run/:id", async (req, res): Promise<void> => {
 
 // POST /api/diagnostics/run/:id/rerun
 router.post("/diagnostics/run/:id/rerun", async (req, res): Promise<void> => {
+  if (!isDatabaseAvailable()) {
+    res.status(503).json({ error: "Database is not configured. Set DATABASE_URL to enable persistence." });
+    return;
+  }
   const db = getDb();
   const id = parseInt(req.params.id);
   if (isNaN(id)) {

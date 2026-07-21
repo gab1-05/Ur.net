@@ -286,6 +286,22 @@ router.get("/diagnostics/interfaces", (_req, res): void => {
 // ─── OVERVIEW ─────────────────────────────────────────────────────────────────
 router.get("/diagnostics/overview", async (req, res): Promise<void> => {
   try {
+    if (!isDatabaseAvailable()) {
+      res.json({
+        avgLatency: null,
+        packetLoss: null,
+        avgJitter: null,
+        dnsResolutionTime: null,
+        totalRuns: 0,
+        successRate: null,
+        activeAlerts: 0,
+        uptimePercent: null,
+        latencyTrend: [],
+        packetLossTrend: [],
+        recentRuns: [],
+      });
+      return;
+    }
     const db = await getDB();
     const allRuns = await db.select().from(diagnosticRunsTable).orderBy(diagnosticRunsTable.startedAt);
     const recent = [...allRuns].slice(-5).reverse();

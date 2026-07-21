@@ -1,11 +1,15 @@
 import { Router } from "express";
-import { getDb, diagnosticRunsTable } from "@workspace/db";
+import { getDb, isDatabaseAvailable, diagnosticRunsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 const router = Router();
 
 // GET /api/export/run/:id/json
 router.get("/export/run/:id/json", async (req, res): Promise<void> => {
+  if (!isDatabaseAvailable()) {
+    res.status(503).json({ error: "Database is not configured. Set DATABASE_URL to enable persistence." });
+    return;
+  }
   const db = getDb();
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
@@ -22,6 +26,10 @@ router.get("/export/run/:id/json", async (req, res): Promise<void> => {
 
 // GET /api/export/run/:id/csv
 router.get("/export/run/:id/csv", async (req, res): Promise<void> => {
+  if (!isDatabaseAvailable()) {
+    res.status(503).json({ error: "Database is not configured. Set DATABASE_URL to enable persistence." });
+    return;
+  }
   const db = getDb();
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
