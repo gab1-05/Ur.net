@@ -1,16 +1,11 @@
 import { Router } from "express";
-import { getDb, isDatabaseAvailable, diagnosticRunsTable } from "@workspace/db";
+import { getDb, diagnosticRunsTable } from "@workspace/db";
 import { eq, desc, gte, lte, and, sql } from "drizzle-orm";
+import { withDatabase } from "../middlewares/withDatabase.js";
 
 const router = Router();
 
-// GET /api/diagnostics/history
-router.get("/diagnostics/history", async (req, res): Promise<void> => {
-  if (!isDatabaseAvailable()) {
-    res.json({ runs: [] });
-    return;
-  }
-  const db = getDb();
+router.get("/diagnostics/history", withDatabase(async (req, res, _next, db) => {
   const { type, target, status, from, to, limit = "50", offset = "0" } = req.query as Record<string, string>;
   const whereClauses: any[] = [];
 
@@ -41,15 +36,9 @@ router.get("/diagnostics/history", async (req, res): Promise<void> => {
     demoMode: r.demoMode,
     error: r.error,
   }))});
-});
+}));
 
-// GET /api/diagnostics/run/:id
-router.get("/diagnostics/run/:id", async (req, res): Promise<void> => {
-  if (!isDatabaseAvailable()) {
-    res.status(503).json({ error: "Database is not configured. Set DATABASE_URL to enable persistence." });
-    return;
-  }
-  const db = getDb();
+router.get("/diagnostics/run/:id", withDatabase(async (req, res, _next, db) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid ID" });
@@ -61,15 +50,9 @@ router.get("/diagnostics/run/:id", async (req, res): Promise<void> => {
     return;
   }
   res.json(run);
-});
+}));
 
-// POST /api/diagnostics/run/:id/rerun
-router.post("/diagnostics/run/:id/rerun", async (req, res): Promise<void> => {
-  if (!isDatabaseAvailable()) {
-    res.status(503).json({ error: "Database is not configured. Set DATABASE_URL to enable persistence." });
-    return;
-  }
-  const db = getDb();
+router.post("/diagnostics/run/:id/rerun", withDatabase(async (req, res, _next, db) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid ID" });
@@ -124,6 +107,7 @@ router.post("/diagnostics/run/:id/rerun", async (req, res): Promise<void> => {
   } catch (err: unknown) {
     res.status(500).json({ error: err instanceof Error ? err.message : "Rerun failed" });
   }
-});
+}));
 
 export default router;
+

@@ -11,6 +11,12 @@ import {
 import { z } from "zod";
 import { getDb, isDatabaseAvailable } from "@workspace/db";
 
+interface PingMetrics {
+  latencyAvg: number;
+  packetLoss?: number;
+  jitter?: number;
+}
+
 const router = Router();
 
 async function getDB() {
@@ -36,11 +42,24 @@ function buildDemoRun(data: {
   error?: string | null;
   parseWarnings?: string[];
   config?: Record<string, unknown> | null;
-}): Record<string, unknown> {
-  return {
-    id: Math.floor(Math.random() * 100000),
-    ...data,
-  };
+}): ApiRunResponse {
+    return {
+      id: Math.floor(Math.random() * 100000),
+      type: data.type,
+      target: data.target,
+      status: data.status,
+      startedAt: data.startedAt.toISOString(),
+      completedAt: data.completedAt?.toISOString() ?? null,
+      durationMs: data.durationMs ?? null,
+      demoMode: data.demoMode,
+      rawOutput: data.rawOutput ?? null,
+      parsedResult: data.parsedResult ?? null,
+      metrics: data.metrics ?? null,
+      hops: data.hops ?? null,
+      dnsRecords: data.dnsRecords ?? null,
+      error: data.error ?? null,
+      parseWarnings: data.parseWarnings ?? [],
+    };
 }
 
 async function saveRun(data: {
@@ -59,16 +78,18 @@ async function saveRun(data: {
   error?: string | null;
   parseWarnings?: string[];
   config?: Record<string, unknown> | null;
-}) {
+}): Promise<ApiRunResponse> {
   try {
     const db = await getDB();
     const [run] = await db
       .insert(diagnosticRunsTable)
       .values(data as typeof diagnosticRunsTable.$inferInsert)
       .returning();
-    return run;
+    return formatRun(run);
   } catch {
-    return buildDemoRun(data);
+    // Remove config from the data passed to buildDemoRun since it's not in ApiRunResponse
+    const { config: _config, ...rest } = data as any;
+    return buildDemoRun(rest as Parameters<typeof buildDemoRun>[0]);
   }
 }
 
@@ -346,7 +367,7 @@ router.get("/diagnostics/overview", async (req, res): Promise<void> => {
 type RunRow = typeof diagnosticRunsTable.$inferSelect;
 
 function buildTrend(runs: RunRow[], getValue: (r: RunRow) => number | null) {
-  const buckets: Record<string, number[]> = {};
+  const buckets: Record<string, number[]> = {} as Record<string, number[]>;
   const now = Date.now();
   for (let i = 23; i >= 0; i--) {
     const ts = new Date(now - i * 60 * 60 * 1000);
@@ -366,22 +387,42 @@ function buildTrend(runs: RunRow[], getValue: (r: RunRow) => number | null) {
   });
 }
 
-function formatRun(run: any): any {
-  if (!run) return run;
+interface ApiRunResponse {
+  id: number;
+  type: string;
+  target: string;
+  status: string;
+  startedAt: string;
+  completedAt: string | null;
+  durationMs: number | null;
+  demoMode: boolean;
+  rawOutput: string | null;
+  parsedResult: Record<string, unknown> | null;
+  metrics: Record<string, unknown> | null;
+  hops: unknown[] | null;
+  dnsRecords: unknown[] | null;
+  error: string | null;
+  parseWarnings: string[];
+}
+
+function formatRun(run: ApiRunResponse | typeof diagnosticRunsTable.$inferSelect): ApiRunResponse {
+  if (!run) {
+    throw new Error("Cannot format null or undefined run");
+  }
   return {
     id: run.id,
     type: run.type,
     target: run.target,
     status: run.status,
-    startedAt: run.startedAt instanceof Date ? run.startedAt.toISOString() : run.startedAt,
+    startedAt: run.startedAt instanceof Date ? run.startedAt.toISOString() : (run.startedAt as unknown as string),
     completedAt: run.completedAt instanceof Date ? run.completedAt.toISOString() : (run.completedAt ?? null),
     durationMs: run.durationMs,
     demoMode: run.demoMode,
     rawOutput: run.rawOutput,
-    parsedResult: run.parsedResult,
-    metrics: run.metrics,
-    hops: run.hops,
-    dnsRecords: run.dnsRecords,
+    parsedResult: run.parsedResult as Record<string, unknown> | null,
+    metrics: run.metrics as Record<string, unknown> | null,
+    hops: run.hops as unknown[] | null,
+    dnsRecords: run.dnsRecords as unknown[] | null,
     error: run.error,
     parseWarnings: run.parseWarnings ?? [],
   };

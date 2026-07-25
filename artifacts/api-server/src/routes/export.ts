@@ -1,16 +1,11 @@
 import { Router } from "express";
-import { getDb, isDatabaseAvailable, diagnosticRunsTable } from "@workspace/db";
+import { getDb, diagnosticRunsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { withDatabase } from "../middlewares/withDatabase.js";
 
 const router = Router();
 
-// GET /api/export/run/:id/json
-router.get("/export/run/:id/json", async (req, res): Promise<void> => {
-  if (!isDatabaseAvailable()) {
-    res.status(503).json({ error: "Database is not configured. Set DATABASE_URL to enable persistence." });
-    return;
-  }
-  const db = getDb();
+router.get("/export/run/:id/json", withDatabase(async (req, res, _next, db) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid ID" });
@@ -22,15 +17,9 @@ router.get("/export/run/:id/json", async (req, res): Promise<void> => {
     return;
   }
   res.json(run);
-});
+}));
 
-// GET /api/export/run/:id/csv
-router.get("/export/run/:id/csv", async (req, res): Promise<void> => {
-  if (!isDatabaseAvailable()) {
-    res.status(503).json({ error: "Database is not configured. Set DATABASE_URL to enable persistence." });
-    return;
-  }
-  const db = getDb();
+router.get("/export/run/:id/csv", withDatabase(async (req, res, _next, db) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid ID" });
@@ -50,6 +39,6 @@ router.get("/export/run/:id/csv", async (req, res): Promise<void> => {
   res.setHeader("Content-Type", "text/csv");
   res.setHeader("Content-Disposition", `attachment; filename="run-${id}.csv"`);
   res.send(csv);
-});
+}));
 
 export default router;

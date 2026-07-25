@@ -38,7 +38,7 @@ export async function runPing(target: string, count = 4, timeoutSec = 10): Promi
   }
 
   const cmd = platform === "win32" ? "ping" : "ping";
-  const result = await execCommand(cmd, args, (timeoutSec + 2) * 1000);
+  const result = await execCommand(cmd, args, Math.max(timeoutSec * count * 1000, timeoutSec * 1000 + 5000));
   const raw = result.stdout + (result.stderr ? `\nSTDERR: ${result.stderr}` : "");
 
   const mode = detectRunMode();
