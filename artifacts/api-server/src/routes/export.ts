@@ -1,12 +1,17 @@
 import { Router } from "express";
-import { getDb, diagnosticRunsTable } from "@workspace/db";
+import { diagnosticRunsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { withDatabase } from "../middlewares/withDatabase.js";
 
 const router = Router();
 
+function getRouteParam(value: string | string[] | undefined): string | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
 router.get("/export/run/:id/json", withDatabase(async (req, res, _next, db) => {
-  const id = parseInt(req.params.id);
+  const id = Number.parseInt(getRouteParam(req.params.id) ?? "", 10);
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid ID" });
     return;
@@ -20,7 +25,7 @@ router.get("/export/run/:id/json", withDatabase(async (req, res, _next, db) => {
 }));
 
 router.get("/export/run/:id/csv", withDatabase(async (req, res, _next, db) => {
-  const id = parseInt(req.params.id);
+  const id = Number.parseInt(getRouteParam(req.params.id) ?? "", 10);
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid ID" });
     return;

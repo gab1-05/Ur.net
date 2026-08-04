@@ -1,17 +1,38 @@
 import { Router } from "express";
-import { getDb, diagnosticRunsTable } from "@workspace/db";
+import { diagnosticRunsTable } from "@workspace/db";
 import { eq, desc, gte, lte, and, sql } from "drizzle-orm";
 import { withDatabase } from "../middlewares/withDatabase.js";
 
 const router = Router();
 
+function getRouteParam(value: string | string[] | undefined): string | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
+function getQueryString(value: unknown): string | undefined {
+  if (Array.isArray(value)) return typeof value[0] === "string" ? value[0] : undefined;
+  return typeof value === "string" ? value : undefined;
+}
+
+function getQueryNumber(value: unknown, fallback: number): number {
+  const parsed = Number.parseInt(getQueryString(value) ?? "", 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
 router.get("/diagnostics/history", withDatabase(async (req, res, _next, db) => {
-  const { type, target, status, from, to, limit = "50", offset = "0" } = req.query as Record<string, string>;
+  const type = getQueryString(req.query.type);
+  const target = getQueryString(req.query.target);
+  const status = getQueryString(req.query.status);
+  const from = getQueryString(req.query.from);
+  const to = getQueryString(req.query.to);
+  const limit = Math.min(getQueryNumber(req.query.limit, 50), 250);
+  const offset = getQueryNumber(req.query.offset, 0);
   const whereClauses: any[] = [];
 
-  if (type) whereClauses.push(eq(diagnosticRunsTable.type, type as string));
+  if (type) whereClauses.push(eq(diagnosticRunsTable.type, type));
   if (target) whereClauses.push(sql`${diagnosticRunsTable.target} ILIKE ${`%${target}%`}`);
-  if (status) whereClauses.push(eq(diagnosticRunsTable.status, status as string));
+  if (status) whereClauses.push(eq(diagnosticRunsTable.status, status));
   if (from) whereClauses.push(gte(diagnosticRunsTable.startedAt, new Date(from)));
   if (to) whereClauses.push(lte(diagnosticRunsTable.startedAt, new Date(to)));
 
@@ -22,8 +43,8 @@ router.get("/diagnostics/history", withDatabase(async (req, res, _next, db) => {
 
   const runs = await query
     .orderBy(desc(diagnosticRunsTable.startedAt))
-    .limit(Number(limit))
-    .offset(Number(offset));
+    .limit(limit)
+    .offset(offset);
 
   res.json({ runs: runs.map(r => ({
     id: r.id,
@@ -39,7 +60,7 @@ router.get("/diagnostics/history", withDatabase(async (req, res, _next, db) => {
 }));
 
 router.get("/diagnostics/run/:id", withDatabase(async (req, res, _next, db) => {
-  const id = parseInt(req.params.id);
+  const id = Number.parseInt(getRouteParam(req.params.id) ?? "", 10);
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid ID" });
     return;
@@ -53,7 +74,7 @@ router.get("/diagnostics/run/:id", withDatabase(async (req, res, _next, db) => {
 }));
 
 router.post("/diagnostics/run/:id/rerun", withDatabase(async (req, res, _next, db) => {
-  const id = parseInt(req.params.id);
+  const id = Number.parseInt(getRouteParam(req.params.id) ?? "", 10);
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid ID" });
     return;

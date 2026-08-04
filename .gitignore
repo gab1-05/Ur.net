@@ -46,3 +46,5 @@ Thumbs.db
 
 .cache/
 .local/
+.agents/logs/
+.agents/screenshots/

@@ -30,6 +30,23 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          charts: ["recharts"],
+          query: ["@tanstack/react-query"],
+          radix: [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-popover",
+            "@radix-ui/react-select",
+            "@radix-ui/react-tabs",
+            "@radix-ui/react-tooltip",
+          ],
+          vendor: ["react", "react-dom", "wouter", "lucide-react"],
+        },
+      },
+    },
   },
   server: {
     port,
@@ -39,7 +56,12 @@ export default defineConfig({
     fs: {
       strict: true,
     },
-    proxy: {},
+    proxy: {
+      "/api": {
+        target: process.env.API_PROXY_TARGET ?? "http://localhost:3000",
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     port,

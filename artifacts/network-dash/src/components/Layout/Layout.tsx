@@ -11,7 +11,7 @@ export function Layout({ children, noPadding }: { children: ReactNode; noPadding
       </div>
       <div className="flex flex-col flex-1 min-w-0">
         <Topbar />
-        <main className={`flex-1 min-h-0 overflow-y-auto ${noPadding ? "" : "p-4 md:p-5"}`}>
+        <main className={`flex-1 min-h-0 overflow-x-hidden overflow-y-auto ${noPadding ? "" : "p-4 md:p-5"}`}>
           {noPadding ? children : (
             <div className="max-w-7xl mx-auto w-full">
               {children}

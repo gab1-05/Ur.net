@@ -6,7 +6,7 @@ import { SkeletonCard } from "@/components/ui/SkeletonCard";
 import { SkeletonTable } from "@/components/ui/SkeletonTable";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, Clock, Server, AlertTriangle, CheckCircle2, History } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, History, Network, ShieldCheck, Zap } from "lucide-react";
 import { useGetDiagnosticOverview, getGetDiagnosticOverviewQueryKey, useGetAlerts, getGetAlertsQueryKey } from "@workspace/api-client-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Badge } from "@/components/ui/badge";
@@ -19,18 +19,60 @@ export default function Overview() {
   const latencyTrend = Array.isArray(overview?.latencyTrend) ? overview.latencyTrend : [];
   const packetLossTrend = Array.isArray(overview?.packetLossTrend) ? overview.packetLossTrend : [];
   const recentRuns = Array.isArray(overview?.recentRuns) ? overview.recentRuns : [];
+  const openAlerts = alertsList.length;
+  const failedRuns = recentRuns.filter((run) => run.status !== "success").length;
+  const avgDuration = recentRuns.length > 0
+    ? Math.round(recentRuns.reduce((total, run) => total + (run.durationMs ?? 0), 0) / recentRuns.length)
+    : null;
+  const healthScore = overview?.successRate != null ? Math.round(overview.successRate) : null;
 
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex flex-col gap-2 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div>
-              <p className="text-sm font-medium text-primary">Operations snapshot</p>
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard Overview</h1>
+        <div className="w-full max-w-full overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+          <div className="grid gap-0 lg:grid-cols-[1.5fr_1fr]">
+            <div className="min-w-0 p-5 md:p-6">
+              <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                <Network className="h-4 w-4" />
+                Operations snapshot
+              </div>
+              <h1 className="mt-2 break-words text-2xl font-semibold tracking-tight text-foreground">Network Control Dashboard</h1>
+              <p className="mt-2 max-w-[28ch] break-words text-sm leading-6 text-muted-foreground sm:max-w-2xl">
+                Monitor diagnostics, review failures, and spot latency or packet loss from one workspace.
+              </p>
+              <div className="mt-5 grid max-w-full grid-cols-1 gap-2 overflow-hidden sm:flex sm:flex-wrap">
+                <Badge variant="secondary" className="w-fit max-w-full gap-1.5 rounded-md px-2.5 py-1">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <span className="truncate">{healthScore != null ? `${healthScore}% success` : "Awaiting signal"}</span>
+                </Badge>
+                <Badge variant={openAlerts > 0 ? "destructive" : "outline"} className="w-fit max-w-full gap-1.5 rounded-md px-2.5 py-1">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  <span className="truncate">{openAlerts} active alerts</span>
+                </Badge>
+                <Badge variant="outline" className="w-fit max-w-full gap-1.5 rounded-md px-2.5 py-1">
+                  <Zap className="h-3.5 w-3.5" />
+                  <span className="truncate">{avgDuration != null ? `${avgDuration}ms avg run` : "No run timing"}</span>
+                </Badge>
+              </div>
             </div>
-            <div className="rounded-full border border-border/70 bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground">
-              Updated live
+            <div className="grid min-w-0 grid-cols-1 border-t border-border bg-muted/30 sm:grid-cols-3 lg:border-l lg:border-t-0">
+              <div className="p-4">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Runs</p>
+                <p className="mt-2 text-2xl font-semibold tabular-nums">{overview?.totalRuns ?? 0}</p>
+                <p className="text-xs text-muted-foreground">24 hours</p>
+              </div>
+              <div className="border-t border-border p-4 sm:border-l sm:border-t-0">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Failures</p>
+                <p className="mt-2 text-2xl font-semibold tabular-nums">{failedRuns}</p>
+                <p className="text-xs text-muted-foreground">Recent</p>
+              </div>
+              <div className="border-t border-border p-4 sm:border-l sm:border-t-0">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Loss</p>
+                <p className="mt-2 text-2xl font-semibold tabular-nums">
+                  {overview?.packetLoss != null ? `${overview.packetLoss.toFixed(1)}%` : "-"}
+                </p>
+                <p className="text-xs text-muted-foreground">Average</p>
+              </div>
             </div>
           </div>
         </div>
@@ -123,7 +165,7 @@ export default function Overview() {
                         labelFormatter={(val) => new Date(val).toLocaleString()}
                         formatter={(val: unknown) => {
   const num = typeof val === "number" ? val : null;
-  return num != null ? [`${num}ms`, "Latency"] : ["—", "Value"];
+  return num != null ? [`${num}ms`, "Latency"] : ["-", "Value"];
 }}
                       />
                       <Line type="monotone" dataKey="value" stroke="hsl(var(--chart-1))" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
@@ -168,7 +210,7 @@ export default function Overview() {
                         labelFormatter={(val) => new Date(val).toLocaleString()}
                         formatter={(val: unknown) => {
   const num = typeof val === "number" ? val : null;
-  return num != null ? [`${num}%`, "Packet Loss"] : ["—", "Value"];
+  return num != null ? [`${num}%`, "Packet Loss"] : ["-", "Value"];
 }}
                       />
                       <Line type="monotone" dataKey="value" stroke="hsl(var(--chart-3))" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />

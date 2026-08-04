@@ -5,6 +5,8 @@
   "scripts": {
     "preinstall": "node -e \"const fs=require('fs'); ['package-lock.json','yarn.lock'].forEach((f)=>{if(fs.existsSync(f)){fs.unlinkSync(f)}}); const ua=process.env.npm_config_user_agent||''; if(!ua.startsWith('pnpm/')){console.error('Use pnpm instead'); process.exit(1)}\"",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "db:init": "node ./scripts/db-init.mjs",
+    "db:push": "pnpm --filter @workspace/db run push",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },

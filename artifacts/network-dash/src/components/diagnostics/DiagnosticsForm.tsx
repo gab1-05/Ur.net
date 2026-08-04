@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronRight, Play } from "lucide-react";
-import { useGetSystemCapabilities } from "@workspace/api-client-react";
 import { DnsInputRecordType } from "@/lib/api-schemas";
 
 const baseSchema = z.object({
@@ -37,7 +36,6 @@ interface DiagnosticsFormProps {
 }
 
 export function DiagnosticsForm({ defaultType, defaultValues, onSubmit, isPending }: DiagnosticsFormProps) {
-  const { data: caps } = useGetSystemCapabilities();
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const form = useForm<DiagnosticsFormData>({
@@ -49,41 +47,26 @@ export function DiagnosticsForm({ defaultType, defaultValues, onSubmit, isPendin
       timeout: 5,
       maxHops: 30,
       recordType: DnsInputRecordType.A,
+      port: 443,
       ...defaultValues,
     },
   });
 
   const type = form.watch("type");
 
+  useEffect(() => {
+    const nextType = defaultType ?? "ping";
+    form.setValue("type", nextType, { shouldDirty: false, shouldValidate: true });
+    if (nextType === "gateway") {
+      form.setValue("target", "default-gateway", { shouldDirty: false, shouldValidate: true });
+    }
+    setAdvancedOpen(false);
+  }, [defaultType, form]);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="flex flex-col sm:flex-row gap-4">
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem className="w-full sm:w-[200px]">
-                <FormLabel>Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select diagnostic type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="ping" disabled={caps && !caps.commands.ping}>Ping</SelectItem>
-                    <SelectItem value="traceroute" disabled={caps && !caps.commands.traceroute}>Traceroute</SelectItem>
-                    <SelectItem value="dns" disabled={caps && !caps.commands.dns}>DNS Lookup</SelectItem>
-                    <SelectItem value="port-check" disabled={caps && !caps.commands.portCheck}>Port Check</SelectItem>
-                    <SelectItem value="gateway">Gateway Check</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
           {type !== "gateway" && (
             <FormField
               control={form.control}

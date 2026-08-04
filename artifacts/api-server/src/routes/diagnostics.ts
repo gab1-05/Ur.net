@@ -424,7 +424,7 @@ function formatRun(run: ApiRunResponse | typeof diagnosticRunsTable.$inferSelect
     hops: run.hops as unknown[] | null,
     dnsRecords: run.dnsRecords as unknown[] | null,
     error: run.error,
-    parseWarnings: run.parseWarnings ?? [],
+    parseWarnings: Array.isArray(run.parseWarnings) ? (run.parseWarnings as string[]) : [],
   };
 }
 
